@@ -1,128 +1,47 @@
-<script>
+<script lang="ts">
 	import { browser } from '$app/environment';
 	import { page } from '$app/stores';
-	import { readable, get } from 'svelte/store';
+	import { get, readable, type Readable } from 'svelte/store';
 	import { clipboardCopy } from './clipboardCopy.js';
 
-	let styleInit = false;
+	let styleInit = $state(false);
 
-	/**
-	 * @typedef {unknown | Promise<unknown>} EncodeableData
-	 * @typedef {import('svelte/store').Readable<EncodeableData>} EncodeableDataStore
-	 *
-	 * @typedef {EncodeableData | EncodeableDataStore} DebugData
-	 */
+	type EncodeableData = unknown | Promise<unknown>;
+	type EncodeableDataStore = import('svelte/store').Readable<EncodeableData>;
 
-	/**
-	 * Data to be displayed as pretty JSON.
-	 *
-	 * @type {DebugData}
-	 */
-	export let data;
-	/**
-	 * Controls when the component should be displayed.
-	 *
-	 * Default: `true`.
-	 */
-	export let display = true;
-	/**
-	 * Controls when to show the HTTP status code of the current page (reflecs the status code of the last request).
-	 *
-	 * Default is `true`.
-	 */
-	export let status = true;
-	/**
-	 * Optional label to identify the component easily.
-	 */
-	export let label = '';
-	/**
-	 * Controls the maximum length of a string field of the data prop.
-	 *
-	 * Default is `120` characters. Set to `0` to disable trimming.
-	 */
-	export let stringTruncate = 120;
-	/**
-	 * Reference to the pre element that contains the data.
-	 *
-	 * @type {HTMLPreElement | undefined}
-	 */
-	export let ref = undefined;
-	/**
-	 * Controls if the data prop should be treated as a promise (skips promise detection when true).
-	 *
-	 * Default is `false`.
-	 * @deprecated Promises are auto-detected from 1.3.0.
-	 */
-	export let promise = false;
-	/**
-	 * Controls if the data prop should be treated as a plain object (skips promise and store detection when true, prevails over promise prop).
-	 *
-	 * Default is `false`.
-	 */
-	export let raw = false;
-	/**
-	 * Enables the display of fields of the data prop that are functions.
-	 *
-	 * Default is `false`.
-	 */
-	export let functions = false;
-	/**
-	 * Theme, which can also be customized with CSS variables:
-	 *
-	 * ```txt
-	 * --sd-bg-color
-	 * --sd-label-color
-	 * --sd-promise-loading-color
-	 * --sd-promise-rejected-color
-	 * --sd-code-default
-	 * --sd-info
-	 * --sd-success
-	 * --sd-redirect
-	 * --sd-error
-	 * --sd-code-key
-	 * --sd-code-string
-	 * --sd-code-date
-	 * --sd-code-boolean
-	 * --sd-code-number
-	 * --sd-code-bigint
-	 * --sd-code-null
-	 * --sd-code-nan
-	 * --sd-code-undefined
-	 * --sd-code-function
-	 * --sd-code-symbol
-	 * --sd-code-error
-	 * --sd-sb-width
-	 * --sd-sb-height
-	 * --sd-sb-track-color
-	 * --sd-sb-track-color-focus
-	 * --sd-sb-thumb-color
-	 * --sd-sb-thumb-color-focus
-	 * ```
-	 *
-	 * @type {"default" | "vscode"}
-	 */
-	export let theme = 'default';
+	type DebugData = EncodeableData | EncodeableDataStore;
 
-	///// Collapse behavior ///////////////////////////////////////////
-
-	/**
-	 * Will show a collapse bar at the bottom of the component, that can be used to hide and show the output. Default is `false`.
-	 * When toggled, the state is saved in session storage for all SuperDebug components on the page.
-	 */
-	export let collapsible = false;
-
-	/**
-	 * Initial state for the collapsed component. Use together with the `collapsible` prop.
-	 * On subsequent page loads, the session storage will determine the state of all SuperDebug components on the page.
-	 */
-	export let collapsed = false;
+	let {
+		data,
+		display = true,
+		status = true,
+		label = '',
+		stringTruncate = 120,
+		ref = undefined,
+		promise = false,
+		raw = false,
+		functions = false,
+		theme = 'default',
+		collapsible = false,
+		collapsed = false
+	}: {
+		data: DebugData;
+		display?: boolean;
+		status?: boolean;
+		label?: string;
+		stringTruncate?: number;
+		ref?: HTMLPreElement;
+		promise?: boolean;
+		raw?: boolean;
+		functions?: boolean;
+		theme?: 'default' | 'vscode';
+		collapsible?: boolean;
+		collapsed?: boolean;
+	} = $props();
 
 	if (browser && collapsible) setCollapse();
 
-	/**
-	 * @param {boolean|undefined} status
-	 */
-	function setCollapse(status = undefined) {
+	function setCollapse(status: boolean | undefined = undefined) {
 		let data;
 		// eslint-disable-next-line svelte/valid-compile
 		const route = $page.route.id ?? '';
@@ -150,20 +69,14 @@
 		collapsed = data.collapsed[route];
 	}
 
-	/**
-	 * @type {ReturnType<typeof setTimeout> | undefined}
-	 */
-	let copied;
+	let copied: ReturnType<typeof setTimeout> | undefined = $state();
 
-	/**
-	 * @param {Event} e
-	 */
-	async function copyContent(e) {
+	async function copyContent(e: Event) {
 		if (!e.target) return;
-		const parent = /** @type {HTMLElement} */ (e.target).closest('.super-debug');
+		const parent = (e.target as HTMLElement).closest('.super-debug');
 		if (!parent) return;
 
-		const codeEl = /** @type {HTMLPreElement} */ (parent.querySelector('.super-debug--code'));
+		const codeEl = parent.querySelector('.super-debug--code') as HTMLPreElement;
 		if (!codeEl) return;
 
 		clearTimeout(copied);
@@ -171,10 +84,7 @@
 		copied = setTimeout(() => (copied = undefined), 900);
 	}
 
-	/**
-	 * @param {File} file
-	 */
-	function fileToJSON(file) {
+	function fileToJSON(file: File) {
 		return {
 			name: file.name,
 			size: file.size,
@@ -185,11 +95,7 @@
 
 	///////////////////////////////////////////////////////////////////
 
-	/**
-	 * @param {unknown} json
-	 * @returns {string}
-	 */
-	function syntaxHighlight(json) {
+	function syntaxHighlight(json: unknown): string {
 		switch (typeof json) {
 			case 'function': {
 				return `<span class="function">[function ${json.name ?? 'unnamed'}]</span>`;
@@ -314,13 +220,11 @@
 		);
 	}
 
-	/**
-	 * @param {EncodeableData} data
-	 * @param {boolean} raw
-	 * @param {boolean} promise
-	 * @returns {data is Promise<unknown>}
-	 */
-	function assertPromise(data, raw, promise) {
+	function assertPromise(
+		data: EncodeableData,
+		raw: boolean,
+		promise: boolean
+	): data is Promise<unknown> {
 		if (raw) {
 			return false;
 		}
@@ -333,12 +237,7 @@
 		);
 	}
 
-	/**
-	 * @param {DebugData} data
-	 * @param {boolean} raw
-	 * @returns {data is EncodeableDataStore}
-	 */
-	function assertStore(data, raw) {
+	function assertStore(data: DebugData, raw: boolean): data is EncodeableDataStore {
 		if (raw) {
 			return false;
 		}
@@ -350,27 +249,29 @@
 		);
 	}
 
-	$: themeStyle =
+	let themeStyle = $derived(
 		theme === 'vscode'
 			? `
-      --sd-vscode-bg-color: #1f1f1f;
-      --sd-vscode-label-color: #cccccc;
-      --sd-vscode-code-default: #8c8a89;
-      --sd-vscode-code-key: #9cdcfe;
-      --sd-vscode-code-string: #ce9171;
-      --sd-vscode-code-number: #b5c180;
-      --sd-vscode-code-boolean: #4a9cd6;
-      --sd-vscode-code-null: #4a9cd6;
-      --sd-vscode-code-undefined: #4a9cd6;
-      --sd-vscode-code-nan: #4a9cd6;
-      --sd-vscode-code-symbol: #4de0c5;
-      --sd-vscode-sb-thumb-color: #35373a;
-      --sd-vscode-sb-thumb-color-focus: #4b4d50;
-    `
-			: undefined;
+		--sd-vscode-bg-color: #1f1f1f;
+		--sd-vscode-label-color: #cccccc;
+		--sd-vscode-code-default: #8c8a89;
+		--sd-vscode-code-key: #9cdcfe;
+		--sd-vscode-code-string: #ce9171;
+		--sd-vscode-code-number: #b5c180;
+		--sd-vscode-code-boolean: #4a9cd6;
+		--sd-vscode-code-null: #4a9cd6;
+		--sd-vscode-code-undefined: #4a9cd6;
+		--sd-vscode-code-nan: #4a9cd6;
+		--sd-vscode-code-symbol: #4de0c5;
+		--sd-vscode-sb-thumb-color: #35373a;
+		--sd-vscode-sb-thumb-color-focus: #4b4d50;
+	  `
+			: undefined
+	);
 
-	/** @type {import('svelte/store').Readable<EncodeableData>} */
-	$: debugData = assertStore(data, raw) ? data : readable(data);
+	let debugData = $derived<Readable<EncodeableData>>(
+		assertStore(data, raw) ? data : readable(data)
+	);
 </script>
 
 {#if !styleInit}
@@ -608,7 +509,7 @@
 		>
 			<div class="super-debug--label">{label}</div>
 			<div class="super-debug--right-status">
-				<button type="button" class="super-debug--copy" on:click={copyContent}>
+				<button type="button" class="super-debug--copy" onclick={copyContent}>
 					{#if !copied}
 						<svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24"
 							><g
@@ -661,20 +562,21 @@
 			class:super-debug--with-label={label}
 			class:super-debug--hidden={collapsed}
 			bind:this={ref}><code class="super-debug--code"
-				><slot
-					>{#if assertPromise($debugData, raw, promise)}{#await $debugData}<div
-								class="super-debug--promise-loading">Loading data...</div>{:then result}{@html syntaxHighlight(
-								assertStore(result, raw) ? get(result) : result
-							)}{:catch error}<span class="super-debug--promise-rejected">Rejected:</span
-							> {@html syntaxHighlight(error)}{/await}{:else}{@html syntaxHighlight(
-							$debugData
-						)}{/if}</slot
-				></code
+				>{#if assertPromise($debugData, raw, promise)}{#await $debugData}<div
+							class="super-debug--promise-loading">Loading data...</div>{:then result}{@html syntaxHighlight(
+							assertStore(result, raw) ? get(result) : result
+						)}{:catch error}<span class="super-debug--promise-rejected">Rejected:</span
+						> {@html syntaxHighlight(error)}{/await}{:else}{@html syntaxHighlight(
+						$debugData
+					)}{/if}</code
 			></pre>
 		{#if collapsible}
 			<button
 				type="button"
-				on:click|preventDefault={() => setCollapse(!collapsed)}
+				onclick={(e) => {
+					e.preventDefault();
+					setCollapse(!collapsed);
+				}}
 				class="super-debug--collapse"
 				aria-label="Collapse"
 			>
@@ -695,26 +597,26 @@
 {/if}
 
 <!--
-  @component
-
-  SuperDebug is a debugging component that gives you colorized and nicely formatted output for any data structure, usually $form.
+	@component
   
-  Other use cases includes debugging plain objects, promises, stores and more.
-
-  More info: https://superforms.rocks/super-debug
+	SuperDebug is a debugging component that gives you colorized and nicely formatted output for any data structure, usually $form.
+	
+	Other use cases includes debugging plain objects, promises, stores and more.
   
-  **Short example:**
-
-  ```svelte
-  <script>
-    import SuperDebug from 'sveltekit-superforms';
-    import { superForm } from 'sveltekit-superforms';
-
-    export let data;
-    
-    const { errors, form, enhance } = superForm(data.form);
-  </script>
+	More info: https://superforms.rocks/super-debug
+	
+	**Short example:**
   
-  <SuperDebug data={$form} label="My form data" />
-  ```
--->
+	```svelte
+	<script>
+	  import SuperDebug from 'sveltekit-superforms';
+	  import { superForm } from 'sveltekit-superforms';
+  
+	  export let data;
+	  
+	  const { errors, form, enhance } = superForm(data.form);
+	</script>
+	
+	<SuperDebug data={$form} label="My form data" />
+	```
+  -->
