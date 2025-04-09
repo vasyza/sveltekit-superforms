@@ -1,8 +1,6 @@
 {
-	"name": "sveltekit-superforms",
+	"name": "sveltekit-superforms-5",
 	"version": "2.24.1",
-	"author": "Andreas Söderlund <ciscoheat@gmail.com> (https://blog.encodeart.dev)",
-	"description": "Making SvelteKit forms a pleasure to use!",
 	"keywords": [
 		"sveltekit",
 		"svelte",
@@ -24,11 +22,6 @@
 		"zod"
 	],
 	"license": "MIT",
-	"homepage": "https://superforms.rocks",
-	"bugs": "https://github.com/ciscoheat/sveltekit-superforms/issues",
-	"repository": {
-		"url": "https://github.com/ciscoheat/sveltekit-superforms"
-	},
 	"funding": [
 		{
 			"type": "github",
